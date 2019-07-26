@@ -79,6 +79,16 @@ def test_maybe():
     assert not re.match("aaaaaaa")
 
 
+def test_maybe_fsm():
+    re = Chain("say") + Maybe(Chain(" hello"))
+
+    assert not re.match("")
+    assert re.match("say")
+    assert re.match("say hello")
+    assert not re.match("say hell")
+    assert not re.match(" hello")
+
+
 def test_any_number_simple():
     re = AnyNumber("a")
 
@@ -99,6 +109,18 @@ def test_any_number():
     assert not re.match("")
     assert not re.match("aaaaaa")
     assert not re.match("ab")
+
+
+def test_any_number_fsm():
+    re = AnyNumber(Chain("na ")) + Chain("Batman!")
+
+    assert re.match("Batman!")
+    assert re.match("na Batman!")
+    assert re.match("na na Batman!")
+    assert re.match("na na na Batman!")
+    assert re.match("na na na na Batman!")
+    assert not re.match("na na ")
+    assert not re.match("na na Batman!!")
 
 
 def test_range():

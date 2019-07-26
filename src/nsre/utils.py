@@ -3,7 +3,11 @@ from typing import Iterator, Tuple, TypeVar
 T = TypeVar("T")
 
 
-def n_uple(it: Iterator[T], n: int) -> Tuple[T, T]:
+def n_uple(it: Iterator[T], n: int) -> Tuple[T, ...]:
+    """
+    Generates n-uples from the iterator.
+    """
+
     stack = []
 
     for i in it:
