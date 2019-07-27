@@ -5,7 +5,5 @@ python:
   - "3.7"
   - "3.7-dev"
   - "3.8-dev"
-install: "pip install -r requirements.txt"
-script: ./travis.sh
-services:
-- redis-server
+install: "make venv"
+script: "make test"

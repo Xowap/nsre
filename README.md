@@ -1,6 +1,8 @@
 Non-String Regular Expressions
 ==============================
 
+[![Build Status](https://travis-ci.org/Xowap/nsre.svg?branch=develop)](https://travis-ci.org/Xowap/nsre)
+
 Regular expressions are used to match strings of characters, however the
 concept can be applied to anything else. This engine allows you to match
 any list of any type of objects using the same kind of constructs that regular
