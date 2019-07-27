@@ -296,7 +296,7 @@ pip install -r requirements.txt
 
 ### Update dependencies
 
-Edit `requirements.txt` then run
+Edit `requirements.in` then run
 
 ```
 make venv
