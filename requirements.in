@@ -1,3 +1,6 @@
+dataclasses
+networkx
+
 # dev
 pip-tools
 ipython
