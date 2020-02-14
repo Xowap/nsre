@@ -60,7 +60,7 @@ class CopyLeftRightMixin:
 # noinspection PyUnresolvedReferences
 class CopyStatementMixin:
     def copy(self):
-        return self.__class__(self.statement)
+        return self.__class__(self.statement.copy())
 
 
 class DumbHash:

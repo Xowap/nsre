@@ -134,7 +134,7 @@ def test_match_group_7():
     c = seq("+")
     p = w + AnyNumber(ww)
 
-    re = RegExp.from_ast(p + c + p)
+    re = RegExp.from_ast(p + (c + p) * slice(1, None))
     assert not re.match("a")
     assert not re.match("abb")
     assert not re.match("abb+")
@@ -150,7 +150,7 @@ def test_match_email():
 
     part = w + AnyNumber(ww)
     user_name = part + AnyNumber(user_connector + part)
-    domain_name = part + domain_connector + part
+    domain_name = part + (domain_connector + part) * slice(1, None)
     at = seq("@")
 
     re = RegExp.from_ast(w)

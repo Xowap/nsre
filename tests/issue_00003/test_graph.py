@@ -75,21 +75,51 @@ def test_exp_2(fa, fb):
 
 
 # noinspection DuplicatedCode
-def test_concat_any_number(fa, fb, fc):
+def test_concat_any_number():
+    a1 = Final(Eq("a1"))
+    a2 = Final(Eq("a2"))
+    b1 = Final(Eq("b1"))
+    b2 = Final(Eq("b2"))
+    c = Final(Eq("c"))
+
+    p1: Node = a1 + AnyNumber(b1)
+    p2: Node = a2 + AnyNumber(b2)
+
+    exp = p1 + c + p2
+
+    g = ast_to_graph(exp.copy())
+    edges = list(
+        sorted(
+            [
+                ("I", "a1"),
+                ("a1", "c"),
+                ("a1", "b1"),
+                ("b1", "b1"),
+                ("b1", "c"),
+                ("c", "a2"),
+                ("a2", "T"),
+                ("a2", "b2"),
+                ("b2", "b2"),
+                ("b2", "T"),
+            ]
+        )
+    )
+    assert graph_edges(g) == edges
+
+
+# noinspection DuplicatedCode
+def test_concat_any_number_same(fa, fb, fc):
     p: Node = fa + AnyNumber(fb)
-    exp: Node = p + fc + p
 
     exp1 = p.copy()
     g = ast_to_graph(exp1)
-    edges = list(sorted([("I", "a"), ("a", "b"), ("a", "T"), ("b", "b"), ("b", "T"),]))
+    edges = list(sorted([("I", "a"), ("a", "b"), ("a", "T"), ("b", "b"), ("b", "T")]))
     assert graph_edges(g) == edges
 
     exp2 = (p + fc).copy()
     g = ast_to_graph(exp2)
     edges = list(
-        sorted(
-            [("I", "a"), ("a", "b"), ("a", "c"), ("b", "b"), ("b", "c"), ("c", "T"),]
-        )
+        sorted([("I", "a"), ("a", "b"), ("a", "c"), ("b", "b"), ("b", "c"), ("c", "T")])
     )
     assert graph_edges(g) == edges
 
