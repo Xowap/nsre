@@ -1,6 +1,8 @@
-from pytest import fixture, raises
+from pytest import raises
 
 from nsre.ast import *
+# noinspection PyProtectedMember
+from nsre.ast import _Initial, _Terminal
 from nsre.matchers import Eq
 
 
@@ -88,10 +90,10 @@ def test_capture(fa):
 
 
 def test_initial_terminal():
-    i1 = Initial()
-    i2 = Initial()
-    t1 = Terminal()
-    t2 = Terminal()
+    i1 = _Initial()
+    i2 = _Initial()
+    t1 = _Terminal()
+    t2 = _Terminal()
 
     assert i1 == i1
     assert i1 == i2

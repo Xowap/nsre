@@ -1,2 +1,4 @@
 from .ast import *
-from .regexp import RegExp
+from .matchers import *
+from .regexp import *
+from .shortcuts import *
