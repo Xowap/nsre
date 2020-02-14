@@ -1,6 +1,7 @@
 from pytest import raises
 
 from nsre.ast import *
+
 # noinspection PyProtectedMember
 from nsre.ast import _Initial, _Terminal
 from nsre.matchers import Eq

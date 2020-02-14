@@ -1,9 +1,0 @@
-dataclasses
-networkx
-
-# dev
-pip-tools
-ipython
-black
-isort
-pytest
