@@ -1,4 +1,4 @@
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from functools import reduce
 from typing import Generic, Text, Union
 
@@ -136,6 +136,13 @@ class Final(DumbHash, Node):
 
     statement: Matcher[Tok, Out]
 
+    def __lt__(self, other):
+        """
+        Comparable for use in the de-duplication process
+        """
+
+        return id(self) < id(other)
+
 
 @dataclass(frozen=True, eq=False)
 class Concatenation(DumbHash, CopyLeftRightMixin, Node):
@@ -182,10 +189,17 @@ class Capture(DumbHash, Node):
     """
 
     name: Text
-    statement: Node
+    statement: Node = field(repr=False)
 
     def copy(self):
         return Capture(name=self.name, statement=self.statement.copy())
+
+    def __lt__(self, other):
+        """
+        Comparable for use in the de-duplication process
+        """
+
+        return id(self) < id(other)
 
 
 @dataclass(frozen=True)

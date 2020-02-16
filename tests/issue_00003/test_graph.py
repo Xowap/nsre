@@ -54,9 +54,10 @@ def test_any_number(fa):
 
 
 def test_capture(fa):
-    g = ast_to_graph(Capture(statement=fa, name="foo"))
-    assert g.get_edge_data(_Initial(), fa) == {"start_captures": ["foo"]}
-    assert g.get_edge_data(fa, _Terminal()) == {"stop_captures": ["foo"]}
+    capture = Capture(statement=fa, name="foo")
+    g = ast_to_graph(capture)
+    assert g.get_edge_data(_Initial(), fa) == {"start_captures": [capture]}
+    assert g.get_edge_data(fa, _Terminal()) == {"stop_captures": [capture]}
 
 
 # noinspection DuplicatedCode
@@ -145,3 +146,65 @@ def test_concat_any_number_same(fa, fb, fc):
         )
     )
     assert graph_edges(g) == edges
+
+
+# noinspection DuplicatedCode
+def test_capture_on_capture(fa, fb):
+    cap1 = fa["foo"]
+    cap2 = fb["bar"]
+    exp = cap1 + cap2
+
+    g = ast_to_graph(exp)
+    assert g.edges[_Initial(), fa].get("start_captures", []) == [cap1]
+    assert g.edges[_Initial(), fa].get("stop_captures", []) == []
+    assert g.edges[fa, fb].get("start_captures", []) == [cap2]
+    assert g.edges[fa, fb].get("stop_captures", []) == [cap1]
+    assert g.edges[fb, _Terminal()].get("start_captures", []) == []
+    assert g.edges[fb, _Terminal()].get("stop_captures", []) == [cap2]
+
+
+# noinspection DuplicatedCode
+def test_any_number_capture_1(fa):
+    cap = AnyNumber(fa)["foo"]
+    g = ast_to_graph(cap)
+    assert g.edges[_Initial(), fa].get("start_captures", []) == [cap]
+    assert g.edges[_Initial(), fa].get("stop_captures", []) == []
+    assert g.edges[fa, fa].get("start_captures", []) == []
+    assert g.edges[fa, fa].get("stop_captures", []) == []
+    assert g.edges[fa, _Terminal()].get("start_captures", []) == []
+    assert g.edges[fa, _Terminal()].get("stop_captures", []) == [cap]
+    assert g.edges[_Initial(), _Terminal()].get("start_captures", []) == []
+    assert g.edges[_Initial(), _Terminal()].get("stop_captures", []) == []
+
+
+# noinspection DuplicatedCode
+def test_any_number_capture_2(fa, fb):
+    cap = fa["foo"]
+    g = ast_to_graph(AnyNumber(cap))
+    assert g.edges[_Initial(), fa].get("start_captures", []) == [cap]
+    assert g.edges[_Initial(), fa].get("stop_captures", []) == []
+    assert g.edges[fa, fa].get("start_captures", []) == [cap]
+    assert g.edges[fa, fa].get("stop_captures", []) == [cap]
+    assert g.edges[fa, _Terminal()].get("start_captures", []) == []
+    assert g.edges[fa, _Terminal()].get("stop_captures", []) == [cap]
+    assert g.edges[_Initial(), _Terminal()].get("start_captures", []) == []
+    assert g.edges[_Initial(), _Terminal()].get("stop_captures", []) == []
+
+
+# noinspection DuplicatedCode
+def test_any_number_capture_3(fa, fb):
+    cap1 = AnyNumber(fa)["foo"]
+    cap2 = fb["bar"]
+    g = ast_to_graph(cap1 + cap2)
+    edges = list(sorted([("I", "a"), ("I", "b"), ("a", "a"), ("a", "b"), ("b", "T"),]))
+    assert graph_edges(g) == edges
+    assert g.edges[_Initial(), fa].get("start_captures", []) == [cap1]
+    assert g.edges[_Initial(), fa].get("stop_captures", []) == []
+    assert g.edges[_Initial(), fb].get("start_captures", []) == [cap2]
+    assert g.edges[_Initial(), fb].get("stop_captures", []) == []
+    assert g.edges[fa, fa].get("start_captures", []) == []
+    assert g.edges[fa, fa].get("stop_captures", []) == []
+    assert g.edges[fa, fb].get("start_captures", []) == [cap2]
+    assert g.edges[fa, fb].get("stop_captures", []) == [cap1]
+    assert g.edges[fb, _Terminal()].get("start_captures", []) == []
+    assert g.edges[fb, _Terminal()].get("stop_captures", []) == [cap2]

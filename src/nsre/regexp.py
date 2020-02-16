@@ -126,12 +126,12 @@ def _explore_capture(explore, g, node):
 
     for p in g.predecessors(node):
         data = g.get_edge_data(p, node, default={"start_captures": []})
-        data["start_captures"] = [*data.get("start_captures", []), node.name]
+        data["start_captures"] = [*data.get("start_captures", []), node]
         g.add_edge(p, node.statement, **data)
 
     for s in g.successors(node):
         data = g.get_edge_data(node, s, default={"stop_captures": []})
-        data["stop_captures"] = [*data.get("stop_captures", []), node.name]
+        data["stop_captures"] = [node, *data.get("stop_captures", [])]
         g.add_edge(node.statement, s, **data)
 
     g.remove_node(node)
@@ -193,18 +193,40 @@ def _cross_connect(g, node):
     """
     Used by `_explore_any_number` and `_explore_maybe` which both need to
     connect all incoming edges to all outgoing edges.
+
+    Notes
+    -----
+    There is a complicated logic with the capture flags in order to make sure
+    that capture groups that are opened and closed at the same time don't
+    actually stay (because they confuse the matching algorithm and they are
+    useless).
     """
 
     for p, s in product(g.predecessors(node), g.successors(node)):
         data1 = g.get_edge_data(p, node, default={})
         data2 = g.get_edge_data(node, s, default={})
-        merged = dict(**data1, **data2)
+        merged = dict(**data1)
+        merged.update(**data2)
 
         if "start_captures" in data1 and "start_captures" in data2:
             merged["start_captures"] = data1["start_captures"] + data2["start_captures"]
 
         if "stop_captures" in data1 and "stop_captures" in data2:
             merged["stop_captures"] = data1["stop_captures"] + data2["stop_captures"]
+
+        cancel = 0
+        start_captures = merged.get("start_captures", [])
+        stop_captures = merged.get("stop_captures", [])
+
+        for start, stop in zip(start_captures, stop_captures):
+            if start == stop:
+                cancel += 1
+            else:
+                break
+
+        if cancel:
+            merged["start_captures"] = start_captures[cancel:]
+            merged["stop_captures"] = stop_captures[:-cancel]
 
         g.add_edge(p, s, **merged)
 
@@ -275,6 +297,24 @@ class _TrailItem(Generic[Out]):
     item: Out
     data: Dict[Text, Sequence[Text]]
 
+    @property
+    def _comparable(self):
+        """
+        Returns a signature tuple that can be used for comparison
+        """
+
+        return self.item, tuple(sorted(self.data.items()))
+
+    def __lt__(self, other):
+        """
+        Sortability for de-duplication purposes
+        """
+
+        if not isinstance(other, _TrailItem):
+            raise TypeError
+
+        return self._comparable < other._comparable
+
 
 @dataclass(frozen=True)
 class Explorer(Generic[Tok, Out]):
@@ -286,6 +326,14 @@ class Explorer(Generic[Tok, Out]):
     re: "RegExp[Tok, Out]"
     node: Node[Tok, Out]
     trail: Tuple[_TrailItem[Out], ...]
+
+    @property
+    def signature(self) -> Tuple[Node, Tuple[_TrailItem, ...]]:
+        """
+        Sortable signature for this explorer, used for de-duplication
+        """
+
+        return self.node, self.trail
 
     def advance(self, token: Tok) -> Iterator["Explorer[Tok, Out]"]:
         """
@@ -335,9 +383,9 @@ class _Match(Generic[Out]):
         self.start_pos = start_pos
         self.children: Dict[Text, List[_Match]] = {}
         self.trail: List[Out] = []
-        self._stack: List[Text] = []
+        self._stack: List[Capture] = []
 
-    def _deep_get(self, keys: Sequence[Text]) -> "_Match":
+    def _deep_get(self, keys: Sequence[Capture]) -> "_Match":
         """
         Gets a child following a path of keys. At each level, gets the last
         child in the list as it is the one that we're going to want to deal
@@ -356,11 +404,11 @@ class _Match(Generic[Out]):
         ptr = self
 
         for key in keys:
-            ptr = ptr.children[key][-1]
+            ptr = ptr.children[key.name][-1]
 
         return ptr
 
-    def start(self, name: Text, pos: int) -> None:
+    def start(self, capture: Capture, pos: int) -> None:
         """
         Call this to indicate that you're starting a capture group
 
@@ -372,7 +420,7 @@ class _Match(Generic[Out]):
 
         Parameters
         ----------
-        name
+        capture
             Name of the capturing group
         pos
             Starting index in the input sequence
@@ -380,24 +428,24 @@ class _Match(Generic[Out]):
 
         stick = self._deep_get(self._stack)
 
-        if name not in stick.children:
-            stick.children[name] = [_Match(pos)]
+        if capture not in stick.children:
+            stick.children[capture.name] = [_Match(pos)]
         else:
-            stick.children[name].append(_Match(pos))
+            stick.children[capture.name].append(_Match(pos))
 
-        self._stack.append(name)
+        self._stack.append(capture)
 
-    def stop(self, name: Text) -> None:
+    def stop(self, capture: Capture) -> None:
         """
         Indicates that matching should stop (as opposed to start).
 
         Parameters
         ----------
-        name
+        capture
             Name of the matching group to stop
         """
 
-        if name != self._stack[-1]:
+        if capture != self._stack[-1]:
             raise ValueError("Trying to stop a match which is not started")
 
         self._stack = self._stack[0:-1]
@@ -416,7 +464,7 @@ class _Match(Generic[Out]):
         ptr = self
 
         for key in self._stack:
-            ptr = ptr.children[key][-1]
+            ptr = ptr.children[key.name][-1]
             ptr.trail.append(item)
 
     def as_match(self, join_trails: bool = False) -> "Match":
@@ -596,16 +644,41 @@ class RegExp(Generic[Tok, Out]):
         stack: List[Explorer[Tok, Out]] = [Explorer(self, _Initial(), tuple())]
 
         for token in seq:
-            stack = [ne for oe in stack for ne in oe.advance(token)]
+            stack = list(
+                self._de_duplicate(ne for oe in stack for ne in oe.advance(token))
+            )
 
             if not stack:
                 break
 
-        return MatchList(
-            self._make_match(s).as_match(join_trails=join_trails)
-            for s in stack
-            if s.can_terminate()
+        terminal = list(
+            self._de_duplicate((s for s in stack if s.can_terminate()), key="trail")
         )
+
+        return MatchList(
+            self._make_match(s).as_match(join_trails=join_trails) for s in terminal
+        )
+
+    def _de_duplicate(
+        self, stack: Iterator[Explorer[Tok, Out]], key: Text = "signature"
+    ) -> Iterator[Explorer[Tok, Out]]:
+        """
+        As there is potentially several paths that lead to the same result, we
+        merge for each node all identical trails. Without this the number of
+        results becomes completely crazy (on top of being useless and
+        confusing)
+        """
+
+        stack = list(sorted(stack, key=lambda e: getattr(e, key)))
+
+        if not stack:
+            return
+
+        yield stack[0]
+
+        for i in range(1, len(stack)):
+            if getattr(stack[i], key) != getattr(stack[i - 1], key):
+                yield stack[i]
 
 
 __all__ = ["RegExp", "Match", "MatchList", "ast_to_graph"]

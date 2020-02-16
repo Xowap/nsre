@@ -1,5 +1,20 @@
 from abc import ABCMeta, abstractmethod
-from typing import Any, Generic, Iterator, Mapping, Sequence, Text, Tuple, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Generic,
+    Iterator,
+    Mapping,
+    Sequence,
+    Text,
+    Tuple,
+    TypeVar,
+    Union,
+)
+
+if TYPE_CHECKING:
+    from .ast import Final
 
 # Tokens type
 Tok = TypeVar("Tok")
@@ -104,6 +119,48 @@ class ChrRanges(Matcher[str, str]):
                 yield token
 
 
+class Test(Matcher[Tok, Out]):
+    """
+    Runs an arbitrary test and matches the token as-is if successful
+    """
+
+    def __init__(self, test: Callable[[Tok], bool]):
+        self.test = test
+
+    def __repr__(self):
+        return f"Test({self.test!r}"
+
+    def match(self, token: Tok) -> Iterator[Out]:
+        if self.test(token):
+            yield token
+
+
+class Not(Matcher[Tok, Out]):
+    """
+    Negates another matcher. If no match is found then the token is returned
+    as-is.
+    """
+
+    def __init__(self, matcher: Union[Matcher, "Final"]):
+        from .ast import Final
+
+        if isinstance(matcher, Final):
+            self.matcher: Matcher[Tok, Out] = matcher.statement
+        elif isinstance(matcher, Matcher):
+            self.matcher: Matcher[Tok, Out] = matcher
+        else:
+            raise ValueError("Cannot negate this")
+
+    def __repr__(self):
+        return f"Not({self.matcher!r})"
+
+    def match(self, token: Tok) -> Iterator[Out]:
+        found = list(self.matcher.match(token))
+
+        if not found:
+            yield token
+
+
 __all__ = [
     "Tok",
     "Out",
@@ -115,4 +172,6 @@ __all__ = [
     "KeyHasValue",
     "Anything",
     "ChrRanges",
+    "Test",
+    "Not",
 ]
