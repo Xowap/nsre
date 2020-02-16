@@ -565,7 +565,7 @@ class RegExp(Generic[Tok, Out]):
     def from_ast(cls, root: Node[Tok, Out]) -> "RegExp[Tok, Out]":
         """
         Use this to generate your regular expression. To generate the AST,
-        have a look at nsre.ast and nsre.shortcuts modules.
+        have a look at :py:mod:`nsre.ast` and :py:mod:`nsre.shortcuts` modules.
 
         Parameters
         ----------

@@ -30,3 +30,4 @@ ipython = "*"
 black = { version = "*", allow-prereleases = true }
 isort = "*"
 pytest = "*"
+sphinx = "^2.4.1"
