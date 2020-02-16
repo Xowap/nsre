@@ -56,32 +56,60 @@ __all__ = [
     "html_tag",
 ]
 
+
+if hasattr(str, "isascii"):
+
+    def _isascii(s: str) -> bool:
+        """
+        Use regular isascii test in Python 3.7+
+        """
+
+        return s.isascii()
+
+
+else:
+
+    def _isascii(s: str) -> bool:
+        """
+        Support for isascii test in Python 3.6
+        """
+
+        if not s:
+            return False
+
+        for c in s:
+            if ord(c) > ord("\u007f"):
+                return False
+
+        return True
+
+
 # Basic Python string tests
 alnum = Final(Test(lambda t: t.isalnum()))
 alnums = alnum * slice(1, None)
 alpha = Final(Test(lambda t: t.isalpha()))
 alphas = alpha * slice(1, None)
-ascii_alnum = Final(Test(lambda t: t.isalnum() and t.isascii()))
+ascii_alnum = Final(Test(lambda t: t.isalnum() and _isascii(t)))
 ascii_alnums = ascii_alnum * slice(1, None)
-ascii_alpha = Final(Test(lambda t: t.isalpha() and t.isascii()))
+ascii_alpha = Final(Test(lambda t: t.isalpha() and _isascii(t)))
 ascii_alphas = ascii_alpha * slice(1, None)
-ascii_decimal = Final(Test(lambda t: t.isdecimal() and t.isascii()))
+ascii_decimal = Final(Test(lambda t: t.isdecimal() and _isascii(t)))
 ascii_decimals = ascii_decimal * slice(1, None)
-ascii_digit = Final(Test(lambda t: t.isdigit() and t.isascii()))
+ascii_digit = Final(Test(lambda t: t.isdigit() and _isascii(t)))
 ascii_digits = ascii_digit * slice(1, None)
-ascii_lower_alnum = Final(Test(lambda t: t.isalnum() and t.islower() and t.isascii()))
+ascii_lower_alnum = Final(Test(lambda t: t.isalnum() and t.islower() and _isascii(t)))
 ascii_lower_alnums = ascii_lower_alnum * slice(1, None)
-ascii_lower_alpha = Final(Test(lambda t: t.isalpha() and t.islower() and t.isascii()))
+ascii_lower_alpha = Final(Test(lambda t: t.isalpha() and t.islower() and _isascii(t)))
 ascii_lower_alphas = ascii_lower_alpha * slice(1, None)
-ascii_numeric = Final(Test(lambda t: t.isnumeric() and t.isascii()))
+ascii_numeric = Final(Test(lambda t: t.isnumeric() and _isascii(t)))
 ascii_numerics = ascii_numeric * slice(1, None)
-ascii_printable = Final(Test(lambda t: t.isprintable() and t.isascii()))
+ascii_printable = Final(Test(lambda t: t.isprintable() and _isascii(t)))
 ascii_printables = ascii_printable * slice(1, None)
-ascii_space = Final(Test(lambda t: t.isspace() and t.isascii()))
+ascii_space = Final(Test(lambda t: t.isspace() and _isascii(t)))
 ascii_spaces = ascii_space * slice(1, None)
-ascii_upper_alnum = Final(Test(lambda t: t.isalnum() and t.isupper() and t.isascii()))
+ascii_upper_alnum = Final(Test(lambda t: t.isalnum() and t.isupper() and _isascii(t)))
 ascii_upper_alnums = ascii_upper_alnum * slice(1, None)
-ascii_upper_alpha = Final(Test(lambda t: t.isalpha() and t.isupper() and t.isascii()))
+ascii_upper_alpha = Final(Test(lambda t: t.isalpha() and t.isupper() and _isascii(t)))
 ascii_upper_alphas = ascii_upper_alpha * slice(1, None)
 decimal = Final(Test(lambda t: t.isdecimal()))
 decimals = decimal * slice(1, None)
