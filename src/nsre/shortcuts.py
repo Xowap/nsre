@@ -20,10 +20,6 @@ def seq(s: Sequence) -> Node:
     ----------
     s
         Sequence to convert into AST
-
-    Returns
-    -------
-    A node that is the concatenation of the sequence
     """
 
     nodes = [Final(Eq(x)) for x in s]

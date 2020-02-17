@@ -29,39 +29,40 @@ def ast_to_graph(root: Node) -> nx.DiGraph:
 
     Notes
     -----
-    Since each node, except the `Final` ones, have children nodes, the idea is
-    to insert nodes into the graph one at a time and then to work on those new
-    nodes to transform it into its content.
+    Since each node, except the :py:class:`nsre.ast.Final` ones, have children
+    nodes, the idea is to insert nodes into the graph one at a time and then to
+    work on those new nodes to transform it into its content.
 
-    Also, there is implicitly a `_Initial` and a `_Terminal` node. The graph
-    exploration will start from the initial node and the regular expression
-    will be considered to be a match if when the input sequence is entirely
-    consumed you can transition to the terminal node.
+    Also, there is implicitly a :code:`_Initial` and a :code:`_Terminal` node.
+    The graph exploration will start from the initial node and the regular
+    expression will be considered to be a match if when the input sequence is
+    entirely consumed you can transition to the terminal node.
 
     By example, you got a node A which is a concatenation of B and C. Suppose
     that the code looks like this:
 
     >>> from nsre import *
-    >>> c = Final(Eq('a'))
+    >>> c = Final(Eq('c'))
     >>> b = Final(Eq('b'))
     >>> a = c + b
-    >>> g = ast_to_graph(c)
+    >>> g = ast_to_graph(a)
 
     Then the first graph you're going to get is
 
-        _Initial -> A -> _Terminal
+        :code:`_Initial` -> :code:`A` -> :code:`_Terminal`
 
     But then the algorithm is going to transform A into its content and you'll
     end up with the new graph
 
-        _Initial -> B -> C -> _Terminal
+        :code:`_Initial` -> :code:`B` -> :code:`C` -> :code:`_Terminal`
 
     And so on if B and C have content of their own (they don't in the current
     example).
 
     The way to transform a node into its content depends on the node type, of
-    course. That's why you'll find in this file a bunch of `_explore_*` methods
-    which are actually the ways to transform a specific node into a graph.
+    course. That's why you'll find in this file a bunch of :code:`_explore_*`
+    methods which are actually the ways to transform a specific node into a
+    graph.
 
     The overall algorithm here is to have a to-do list (the "explore" variable)
     which contains the set of currently unexplored nodes. When a node is
@@ -79,10 +80,6 @@ def ast_to_graph(root: Node) -> nx.DiGraph:
     --------
     _explore_concatenation, _explore_alternation, _explore_maybe,
     _explore_any_number, _explore_capture
-
-    Returns
-    -------
-    A graph that `RegExp` can use for matching.
     """
 
     g = nx.DiGraph()
@@ -344,11 +341,6 @@ class Explorer(Generic[Tok, Out]):
         ----------
         token
             Consumed token
-
-        Returns
-        -------
-        An iterator of all explorers that managed to make one step from this
-        one
         """
 
         for s in self.re.graph.successors(self.node):
@@ -395,10 +387,6 @@ class _Match(Generic[Out]):
         ----------
         keys
             Successive name of keys to follow
-
-        Returns
-        -------
-        The child Match that you're looking for
         """
 
         ptr = self
@@ -477,10 +465,6 @@ class _Match(Generic[Out]):
             If set to true then the items matched in the trail are expected to
             be individual characters and they will be joined in a string
             instead of being returned in an array
-
-        Returns
-        -------
-        Proper Match instance
         """
 
         return Match(
@@ -516,7 +500,7 @@ class Match(Generic[Out]):
         return self.children[item][0]
 
 
-class MatchList(tuple, Generic[Out]):
+class MatchList(tuple, Tuple[Out, ...]):
     """
     List of matches. It's just a convenience around a tuple in order to
     facilitate getting a specific group in the first item of the list.
@@ -571,10 +555,6 @@ class RegExp(Generic[Tok, Out]):
         ----------
         root
             Root node of your expression.
-
-        Returns
-        -------
-        A compiled RegExp
         """
 
         return cls(graph=ast_to_graph(root.copy()))
@@ -587,10 +567,6 @@ class RegExp(Generic[Tok, Out]):
         ----------
         explorer
             Explorer that you want to transform
-
-        Returns
-        -------
-        A _Match object
         """
 
         match = _Match(0)
@@ -635,10 +611,6 @@ class RegExp(Generic[Tok, Out]):
             If all your output items are going to be characters, you can set
             this to true in order to receive trails that are strings instead of
             them being character lists.
-
-        Returns
-        -------
-        All valid matches found in the sequence
         """
 
         stack: List[Explorer[Tok, Out]] = [Explorer(self, _Initial(), tuple())]
