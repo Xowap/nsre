@@ -500,7 +500,7 @@ class Match(Generic[Out]):
         return self.children[item][0]
 
 
-class MatchList(tuple, Tuple[Out, ...]):
+class MatchList(tuple, Generic[Out]):
     """
     List of matches. It's just a convenience around a tuple in order to
     facilitate getting a specific group in the first item of the list.
