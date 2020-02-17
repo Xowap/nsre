@@ -1,0 +1,33 @@
+[tool.poetry]
+
+name = "nsre"
+version = "0.2.0"
+
+description = "Regular expressions for the 21st century. Match any data type."
+license = "WTFPL"
+authors = [
+    "Rémy Sanchez <remy.sanchez@hyperthese.net>"
+]
+
+readme = "README.md"
+
+repository = "https://github.com/Xowap/nsre"
+homepage = "http://nsre.rtfd.io/"
+
+keywords = ["regular expression"]
+
+
+[tool.poetry.dependencies]
+
+python = "^3.6"
+dataclasses = { version = "^0.6", python = "~3.6" }
+networkx = "^2.0"
+
+
+[tool.poetry.dev-dependencies]
+
+ipython = "*"
+black = { version = "*", allow-prereleases = true }
+isort = "*"
+pytest = "*"
+sphinx = "^2.4.1"
